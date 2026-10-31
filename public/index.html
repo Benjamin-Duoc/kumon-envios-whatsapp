@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kumon Los Presidentes - Envíos Automatizados WhatsApp</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- BARRA SUPERIOR -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-sky-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-sky-200">
+          K
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">Kumon Los Presidentes</h1>
+          <p class="text-xs text-slate-500">Sistema de Envíos Automatizados WhatsApp • Orientadora Ximena</p>
+        </div>
+      </div>
+
+      <!-- Estado de WhatsApp y Botón QR -->
+      <div class="flex items-center gap-3">
+        <div id="wa-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+          <span id="wa-status-text">WhatsApp Desconectado</span>
+        </div>
+
+        <button id="btn-open-qr-modal" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+          <span>Vincular WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- COLUMNA IZQUIERDA: CONFIGURACIÓN Y CONTACTOS (7 Cols) -->
+    <div class="lg:col-span-7 space-y-6">
+
+      <!-- PASO 1: CONTACTOS -->
+      <section class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-sky-100 text-sky-700 font-bold text-xs flex items-center justify-center">1</span>
+            <h2 class="font-bold text-slate-900 text-sm sm:text-base">Lista de Contactos</h2>
+          </div>
+          <button id="btn-load-test-data" class="text-xs bg-sky-50 text-sky-700 hover:bg-sky-100 font-semibold px-3 py-1.5 rounded-lg border border-sky-200 transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span>⚡ Cargar Datos de Prueba (5 Apoderados)</span>
+          </button>
+        </div>
+
+        <!-- Zona de Carga -->
+        <div id="drop-zone" class="border-2 border-dashed border-slate-300 hover:border-sky-500 rounded-xl p-4 text-center cursor-pointer transition bg-slate-50/50">
+          <input type="file" id="contacts-file-input" class="hidden" accept=".xlsx, .xls, .csv">
+          <svg class="w-8 h-8 mx-auto text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          <p class="text-xs font-semibold text-slate-700">Arrastra aquí tu archivo Excel (.xlsx) o CSV de apoderados</p>
+          <p class="text-[11px] text-slate-400 mt-1">O haz clic para seleccionarlo de tu computador</p>
+        </div>
+
+        <!-- Resumen de contactos cargados -->
+        <div id="contacts-summary-box" class="hidden p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-semibold text-slate-800" id="contacts-file-name">Contactos listos</span>
+            <div class="flex gap-2">
+              <span id="valid-contacts-badge" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">5 Válidos</span>
+              <span id="invalid-contacts-badge" class="hidden px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">0 Inválidos</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-[11px] text-slate-500 mb-1">Variables dinámicas detectadas (haz clic para insertar en el texto):</p>
+            <div id="tags-container" class="flex flex-wrap gap-1.5">
+              <!-- Se llenan por JS: {nombre}, {alumno}, etc. -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PASO 2: MENSAJE Y ADJUNTOS -->
+      <section class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-sky-100 text-sky-700 font-bold text-xs flex items-center justify-center">2</span>
+            <h2 class="font-bold text-slate-900 text-sm sm:text-base">Mensaje a Enviar</h2>
+          </div>
+          <!-- Plantillas Rápidas -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-[11px] text-slate-400 font-medium">Plantillas:</span>
+            <button id="btn-tpl-reviews" class="text-[11px] font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-1 rounded-md transition">
+              ⭐ Reseñas Google (5 estrellas)
+            </button>
+            <button id="btn-tpl-progress" class="text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded-md transition">
+              🎓 Avance Kumon
+            </button>
+          </div>
+        </div>
+
+        <!-- Área de Texto -->
+        <div>
+          <textarea id="message-text" rows="5" class="w-full text-xs sm:text-sm p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none leading-relaxed custom-scroll" placeholder="Escribe aquí el mensaje. Puedes usar {nombre}, {alumno}, etc..."></textarea>
+          <p class="text-[11px] text-slate-400 mt-1 flex justify-between">
+            <span>Usa <b>*negrita*</b> o <i>_cursiva_</i> como en WhatsApp.</span>
+            <span id="char-counter">0 caracteres</span>
+          </p>
+        </div>
+
+        <!-- Adjuntar Foto / Flyer -->
+        <div class="border-t border-slate-100 pt-3">
+          <label class="block text-xs font-bold text-slate-700 mb-2">Adjuntar Foto o Imagen (Opcional):</label>
+          <div class="flex items-center gap-3">
+            <input type="file" id="media-file-input" class="hidden" accept="image/*">
+            <button id="btn-select-media" class="px-3 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 bg-white text-xs font-semibold text-slate-700 flex items-center gap-1.5 transition">
+              <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span>Seleccionar Imagen</span>
+            </button>
+            <button id="btn-use-test-flyer" class="px-3 py-1.5 rounded-lg border border-sky-200 bg-sky-50 hover:bg-sky-100 text-xs font-semibold text-sky-700 transition">
+              🖼️ Usar Afiche de Prueba Kumon
+            </button>
+          </div>
+
+          <!-- Preview de imagen seleccionada -->
+          <div id="media-preview-box" class="hidden mt-3 p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <img id="media-thumb" class="w-12 h-12 rounded-lg object-cover border border-slate-300" src="" alt="Thumbnail">
+              <div>
+                <p id="media-name" class="text-xs font-semibold text-slate-800">imagen.png</p>
+                <p class="text-[10px] text-slate-400">Adjunta con el mensaje</p>
+              </div>
+            </div>
+            <button id="btn-remove-media" class="p-1.5 text-slate-400 hover:text-rose-600 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- PASO 3: AJUSTES ANTI-BLOQUEO Y MODO DE PRUEBAS -->
+      <section class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-sky-100 text-sky-700 font-bold text-xs flex items-center justify-center">3</span>
+          <h2 class="font-bold text-slate-900 text-sm sm:text-base">Seguridad y Modo de Operación</h2>
+        </div>
+
+        <!-- Selector de Modo: Simulación vs Real -->
+        <div class="grid grid-cols-2 gap-3 p-1.5 bg-slate-100 rounded-xl">
+          <button id="mode-btn-simulation" class="py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white text-sky-700 shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Modo Simulación (Pruebas)</span>
+          </button>
+          <button id="mode-btn-live" class="py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            <span>Modo Real (WhatsApp Web)</span>
+          </button>
+        </div>
+
+        <div id="mode-notice" class="p-3 bg-sky-50 border border-sky-200 rounded-xl text-xs text-sky-900">
+          💡 <b>Modo Simulación Activo:</b> Permite probar la plantilla, el reemplazo de nombres y el flujo completo sin enviar ningún mensaje real ni molestar a los apoderados.
+        </div>
+
+        <!-- Parámetros Anti-Bloqueo -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+          <div>
+            <label class="block text-slate-500 font-medium mb-1">Espera Mínima</label>
+            <div class="flex items-center">
+              <input type="number" id="min-delay" value="5" min="2" max="60" class="w-full p-2 border border-slate-300 rounded-lg text-center font-bold">
+              <span class="ml-1.5 text-slate-400">seg</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-500 font-medium mb-1">Espera Máxima</label>
+            <div class="flex items-center">
+              <input type="number" id="max-delay" value="12" min="3" max="120" class="w-full p-2 border border-slate-300 rounded-lg text-center font-bold">
+              <span class="ml-1.5 text-slate-400">seg</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-500 font-medium mb-1">Lote (Batch)</label>
+            <div class="flex items-center">
+              <input type="number" id="batch-size" value="25" min="5" max="100" class="w-full p-2 border border-slate-300 rounded-lg text-center font-bold">
+              <span class="ml-1.5 text-slate-400">msgs</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-500 font-medium mb-1">Pausa Lote</label>
+            <div class="flex items-center">
+              <input type="number" id="batch-pause" value="45" min="10" max="300" class="w-full p-2 border border-slate-300 rounded-lg text-center font-bold">
+              <span class="ml-1.5 text-slate-400">seg</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- COLUMNA DERECHA: SIMULADOR DE WHATSAPP + PANEL DE MONITOREO (5 Cols) -->
+    <div class="lg:col-span-5 space-y-6">
+
+      <!-- SIMULADOR VISUAL DE WHATSAPP (PHONE PREVIEW) -->
+      <section class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider text-slate-500">Vista Previa en WhatsApp</h3>
+          <span id="preview-contact-name" class="text-xs font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded">Para: Camilo Pérez</span>
+        </div>
+
+        <!-- Marco Teléfono WhatsApp -->
+        <div class="rounded-2xl border-4 border-slate-800 bg-[#efeae2] p-3 shadow-inner relative min-h-[300px] flex flex-col justify-end overflow-hidden" style="background-image: radial-gradient(#d1d7db 1px, transparent 1px); background-size: 16px 16px;">
+          <!-- Barra superior de chat simulado -->
+          <div class="absolute top-0 left-0 right-0 bg-[#008069] text-white p-2.5 flex items-center gap-2.5 shadow z-10">
+            <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-bold text-xs">X</div>
+            <div class="leading-none">
+              <p class="text-xs font-bold">Ximena Kumon</p>
+              <p class="text-[9px] opacity-80">En línea</p>
+            </div>
+          </div>
+
+          <!-- Burbuja de mensaje -->
+          <div class="bg-white rounded-2xl rounded-tr-none p-3 shadow-md text-xs text-slate-900 max-w-[90%] ml-auto mt-12 mb-2 relative space-y-2 border border-slate-200/50">
+            <!-- Imagen en preview -->
+            <div id="phone-preview-media" class="hidden rounded-lg overflow-hidden border border-slate-200">
+              <img id="phone-preview-img" src="" class="w-full h-32 object-cover" alt="Preview">
+            </div>
+            <!-- Texto renderizado -->
+            <p id="phone-preview-text" class="whitespace-pre-line text-[11px] leading-relaxed text-slate-800">
+              ¡Hola Camilo Pérez! Esperamos que Martín Pérez esté teniendo una gran semana en Kumon...
+            </p>
+            <div class="text-[9px] text-slate-400 text-right flex items-center justify-end gap-1">
+              <span>12:00</span>
+              <span class="text-sky-500">✓✓</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BOTONES DE ACCIÓN Y PROGRESO -->
+      <section class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center gap-2">
+          <button id="btn-start" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-sky-600 hover:bg-sky-700 text-white shadow-lg shadow-sky-200 transition flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+            <span id="start-btn-label">Iniciar Simulación</span>
+          </button>
+          <button id="btn-pause" disabled class="py-3 px-3.5 rounded-xl font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-50 transition">
+            ⏸️
+          </button>
+          <button id="btn-stop" disabled class="py-3 px-3.5 rounded-xl font-bold text-sm bg-slate-100 hover:bg-rose-100 text-rose-700 disabled:opacity-50 transition">
+            🛑
+          </button>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div>
+          <div class="flex items-center justify-between text-xs font-semibold mb-1.5">
+            <span id="progress-status-label" class="text-slate-600">Progreso de la Campaña</span>
+            <span id="progress-percent" class="text-sky-700">0%</span>
+          </div>
+          <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+            <div id="progress-bar" class="bg-sky-600 h-full w-0 transition-all duration-300"></div>
+          </div>
+          <div class="flex justify-between items-center text-[11px] text-slate-400 mt-2">
+            <span>Enviados: <b id="stat-sent" class="text-emerald-600">0</b></span>
+            <span>Fallidos: <b id="stat-failed" class="text-rose-600">0</b></span>
+            <span>Omitidos: <b id="stat-skipped" class="text-amber-600">0</b></span>
+            <span>Total: <b id="stat-total" class="text-slate-700">0</b></span>
+          </div>
+        </div>
+
+        <!-- LOGS EN VIVO -->
+        <div>
+          <div class="flex items-center justify-between text-xs font-bold text-slate-700 mb-1.5">
+            <span>Registro en Vivo (Logs):</span>
+            <button id="btn-clear-logs" class="text-[10px] text-slate-400 hover:text-slate-600">Limpiar</button>
+          </div>
+          <div id="log-console" class="bg-slate-900 text-slate-200 p-3 rounded-xl font-mono text-[11px] h-40 overflow-y-auto custom-scroll space-y-1">
+            <div class="text-slate-500">[Sistema] Listo. Carga tus contactos o presiona "Cargar Datos de Prueba".</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- TABLA COMPLETA DE CONTACTOS Y ESTADOS (12 Cols) -->
+    <div class="lg:col-span-12">
+      <section class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-slate-900 text-sm">Detalle de Contactos y Estado de Envío</h2>
+          <span id="table-count" class="text-xs text-slate-500">0 contactos</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-200">
+              <tr>
+                <th class="py-2.5 px-3">#</th>
+                <th class="py-2.5 px-3">Apoderado</th>
+                <th class="py-2.5 px-3">Teléfono</th>
+                <th class="py-2.5 px-3">Alumno</th>
+                <th class="py-2.5 px-3">Materia</th>
+                <th class="py-2.5 px-3">Estado</th>
+                <th class="py-2.5 px-3 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="contacts-table-body" class="divide-y divide-slate-100">
+              <tr>
+                <td colspan="7" class="py-6 text-center text-slate-400">No hay contactos cargados. Haz clic en "⚡ Cargar Datos de Prueba".</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- MODAL PARA CÓDIGO QR DE WHATSAPP -->
+  <div id="qr-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 text-base">Vincular WhatsApp de Ximena</h3>
+        <button id="btn-close-qr-modal" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col items-center justify-center min-h-[260px]">
+        <div id="qr-loading" class="flex flex-col items-center gap-2">
+          <div class="w-10 h-10 border-4 border-sky-600 border-t-transparent rounded-full animate-spin"></div>
+          <p class="text-xs text-slate-600 font-medium">Iniciando cliente de WhatsApp...</p>
+          <p class="text-[10px] text-slate-400">Espera unos segundos para generar el código</p>
+        </div>
+        <img id="qr-image" class="hidden w-60 h-60 rounded-xl shadow" src="" alt="WhatsApp QR Code">
+        <div id="qr-connected-card" class="hidden flex-col items-center gap-2 text-emerald-600">
+          <div class="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center text-2xl font-bold">✓</div>
+          <p class="font-bold text-sm text-slate-800">¡WhatsApp Conectado con Éxito!</p>
+          <p id="qr-user-name" class="text-xs text-slate-500 font-medium">Ximena Kumon</p>
+        </div>
+      </div>
+
+      <div class="text-left text-xs text-slate-600 bg-emerald-50 p-3.5 rounded-xl border border-emerald-100 space-y-1">
+        <p class="font-bold text-emerald-800">Instrucciones para Ximena:</p>
+        <ol class="list-decimal list-inside space-y-0.5 text-[11px] text-emerald-950">
+          <li>Abre WhatsApp en tu teléfono.</li>
+          <li>Toca <b>Ajustes</b> o los <b>tres puntos</b> arriba a la derecha.</li>
+          <li>Selecciona <b>Dispositivos vinculados</b> y luego <b>Vincular un dispositivo</b>.</li>
+          <li>Apunta la cámara al código QR de la pantalla.</li>
+        </ol>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="btn-modal-reconnect" class="flex-1 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition">
+          Reintentar Conexión
+        </button>
+        <button id="btn-modal-disconnect" class="hidden flex-1 py-2 text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl transition">
+          Cerrar Sesión WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
+

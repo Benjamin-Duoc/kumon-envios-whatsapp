@@ -1,0 +1,27 @@
+# Dependencias
+node_modules/
+package-lock.json
+
+# Sesiones y caché de WhatsApp (Privacidad y Seguridad)
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Archivos subidos durante la ejecución
+uploads/*
+!uploads/.gitkeep
+
+# Logs y depuración
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Variables de entorno
+.env
+.env.local
+
+# Archivos del sistema y del editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
