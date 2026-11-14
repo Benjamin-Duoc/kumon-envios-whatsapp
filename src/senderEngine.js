@@ -208,10 +208,26 @@ class SenderEngine {
           });
         } else {
           // Envío real por WhatsApp Web
-          if (imagePath && fs.existsSync(imagePath)) {
-            await this.whatsapp.sendMediaMessage(contact.jid, imagePath, personalizedMessage);
+          // 1. Validar que el número esté registrado en WhatsApp
+          const numberId = await this.whatsapp.getNumberId(contact.jid);
+          if (!numberId) {
+            this.stats.skipped++;
+            this.log(`⚠️ Saltado: ${contact.name} (${contact.displayPhone}) - Este número no tiene cuenta de WhatsApp registrada.`, 'warning');
+            this.emitProgress(contact, {
+              status: 'skipped',
+              error: 'Número no registrado en WhatsApp',
+              previewText: personalizedMessage
+            });
+            continue;
+          }
+
+          const targetJid = numberId._serialized || contact.jid;
+
+          // 2. Enviar con o sin imagen
+          if (imagePath) {
+            await this.whatsapp.sendMediaMessage(targetJid, imagePath, personalizedMessage);
           } else {
-            await this.whatsapp.sendTextMessage(contact.jid, personalizedMessage);
+            await this.whatsapp.sendTextMessage(targetJid, personalizedMessage);
           }
 
           this.stats.sent++;

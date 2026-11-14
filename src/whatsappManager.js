@@ -184,6 +184,16 @@ class WhatsAppManager {
     return this.status === 'READY' && this.client !== null;
   }
 
+  async getNumberId(number) {
+    if (!this.isReady()) return null;
+    try {
+      return await this.client.getNumberId(number);
+    } catch (e) {
+      console.warn('[WhatsApp] Error consultando ID de número:', e.message);
+      return null;
+    }
+  }
+
   async sendTextMessage(toJid, messageText) {
     if (!this.isReady()) {
       throw new Error('El cliente de WhatsApp no está conectado.');
@@ -195,10 +205,11 @@ class WhatsAppManager {
     if (!this.isReady()) {
       throw new Error('El cliente de WhatsApp no está conectado.');
     }
-    if (!fs.existsSync(filePath)) {
-      throw new Error(`Archivo multimedia no encontrado: ${filePath}`);
+    const absPath = path.isAbsolute(filePath) ? filePath : path.join(__dirname, '..', filePath);
+    if (!fs.existsSync(absPath)) {
+      throw new Error(`Archivo multimedia no encontrado: ${absPath}`);
     }
-    const media = MessageMedia.fromFilePath(filePath);
+    const media = MessageMedia.fromFilePath(absPath);
     return await this.client.sendMessage(toJid, media, { caption });
   }
 }
