@@ -110,7 +110,8 @@ const el = {
   logConsole: document.getElementById('log-console'),
   btnClearLogs: document.getElementById('btn-clear-logs'),
   contactsTableBody: document.getElementById('contacts-table-body'),
-  tableCount: document.getElementById('table-count')
+  tableCount: document.getElementById('table-count'),
+  btnClearAllContacts: document.getElementById('btn-clear-all-contacts')
 };
 
 // ==========================================
@@ -258,6 +259,21 @@ function setupEventListeners() {
   el.btnClearLogs.addEventListener('click', () => {
     el.logConsole.innerHTML = '<div class="text-slate-500">[Sistema] Logs limpiados.</div>';
   });
+
+  if (el.btnClearAllContacts) {
+    el.btnClearAllContacts.addEventListener('click', () => {
+      if (state.contacts.length === 0) return;
+      if (confirm(`¿Vaciar toda la lista actual (${state.contacts.length} contactos)?`)) {
+        state.contacts = [];
+        state.selectedPreviewIndex = 0;
+        updateContactsCounters();
+        renderContactsTable();
+        updatePhonePreview();
+        el.contactsSummaryBox.classList.add('hidden');
+        addLog('🗑️ Lista de contactos vaciada.', 'warning');
+      }
+    });
+  }
 }
 
 // ==========================================
@@ -425,6 +441,7 @@ function applyLoadedContacts(data, filename) {
   });
 
   renderContactsTable();
+  updateContactsCounters();
   updatePhonePreview();
 }
 
@@ -517,12 +534,56 @@ function renderContactsTable() {
       <td class="py-2.5 px-3 text-slate-700">${c.variables.materia || '-'}</td>
       <td class="py-2.5 px-3" id="chip-status-${c.id}">${statusChip}</td>
       <td class="py-2.5 px-3 text-right">
-        <button class="text-[10px] font-bold text-sky-600 hover:text-sky-800" onclick="selectPreviewContact(${idx})">Ver Preview</button>
+        <div class="flex items-center justify-end gap-1.5">
+          <button class="text-[10px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 px-2 py-0.5 rounded transition" onclick="selectPreviewContact(${idx})">Ver Preview</button>
+          <button class="text-[10px] font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded transition flex items-center gap-0.5" title="Eliminar de la lista de envío" onclick="deleteContact(${c.id})">
+            <span>🗑️</span>
+            <span>Eliminar</span>
+          </button>
+        </div>
       </td>
     `;
     el.contactsTableBody.appendChild(tr);
   });
 }
+
+function updateContactsCounters() {
+  const total = state.contacts.length;
+  const valid = state.contacts.filter(c => c.isValidPhone).length;
+  const invalid = total - valid;
+
+  el.tableCount.textContent = `${total} contactos`;
+  el.validContactsBadge.textContent = `${valid} Válidos`;
+
+  if (invalid > 0) {
+    el.invalidContactsBadge.textContent = `${invalid} Con Error`;
+    el.invalidContactsBadge.classList.remove('hidden');
+  } else {
+    el.invalidContactsBadge.classList.add('hidden');
+  }
+
+  if (total > 0) {
+    if (el.btnClearAllContacts) el.btnClearAllContacts.classList.remove('hidden');
+  } else {
+    if (el.btnClearAllContacts) el.btnClearAllContacts.classList.add('hidden');
+  }
+}
+
+window.deleteContact = function(id) {
+  const contact = state.contacts.find(c => c.id === id);
+  if (!contact) return;
+
+  if (confirm(`¿Eliminar a "${contact.name}" (${contact.displayPhone}) de la lista de envío?`)) {
+    state.contacts = state.contacts.filter(c => c.id !== id);
+    if (state.selectedPreviewIndex >= state.contacts.length) {
+      state.selectedPreviewIndex = Math.max(0, state.contacts.length - 1);
+    }
+    updateContactsCounters();
+    renderContactsTable();
+    updatePhonePreview();
+    addLog(`🗑️ Contacto eliminado: ${contact.name}`, 'warning');
+  }
+};
 
 window.selectPreviewContact = function(index) {
   state.selectedPreviewIndex = index;
