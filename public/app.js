@@ -44,6 +44,8 @@ const el = {
   qrLoading: document.getElementById('qr-loading'),
   qrImage: document.getElementById('qr-image'),
   qrConnectedCard: document.getElementById('qr-connected-card'),
+  qrErrorCard: document.getElementById('qr-error-card'),
+  qrErrorMsg: document.getElementById('qr-error-msg'),
   qrUserName: document.getElementById('qr-user-name'),
   btnModalReconnect: document.getElementById('btn-modal-reconnect'),
   btnModalDisconnect: document.getElementById('btn-modal-disconnect'),
@@ -530,6 +532,7 @@ socket.on('whatsapp_status', (data) => {
     // Modal
     el.qrLoading.classList.add('hidden');
     el.qrImage.classList.add('hidden');
+    el.qrErrorCard.classList.add('hidden');
     el.qrConnectedCard.classList.remove('hidden');
     el.qrUserName.textContent = `Sesión activa como: ${data.userProfile?.pushname || 'Ximena'}`;
     el.btnModalDisconnect.classList.remove('hidden');
@@ -541,6 +544,7 @@ socket.on('whatsapp_status', (data) => {
     // Modal
     el.qrLoading.classList.add('hidden');
     el.qrConnectedCard.classList.add('hidden');
+    el.qrErrorCard.classList.add('hidden');
     el.qrImage.src = data.qrCode;
     el.qrImage.classList.remove('hidden');
     el.btnModalDisconnect.classList.add('hidden');
@@ -548,6 +552,7 @@ socket.on('whatsapp_status', (data) => {
     el.waStatusText.textContent = 'Iniciando WhatsApp...';
     el.qrLoading.classList.remove('hidden');
     el.qrImage.classList.add('hidden');
+    el.qrErrorCard.classList.add('hidden');
     el.qrConnectedCard.classList.add('hidden');
   } else {
     // DISCONNECTED
@@ -555,6 +560,14 @@ socket.on('whatsapp_status', (data) => {
     el.waBadge.querySelector('span').className = 'w-2.5 h-2.5 rounded-full bg-slate-400';
     el.waStatusText.textContent = 'WhatsApp Desconectado';
     el.btnModalDisconnect.classList.add('hidden');
+
+    if (data.error) {
+      el.qrLoading.classList.add('hidden');
+      el.qrImage.classList.add('hidden');
+      el.qrConnectedCard.classList.add('hidden');
+      el.qrErrorCard.classList.remove('hidden');
+      el.qrErrorMsg.textContent = data.error;
+    }
   }
 });
 

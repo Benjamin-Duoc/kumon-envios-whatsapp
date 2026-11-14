@@ -341,9 +341,14 @@
         <div id="qr-loading" class="flex flex-col items-center gap-2">
           <div class="w-10 h-10 border-4 border-sky-600 border-t-transparent rounded-full animate-spin"></div>
           <p class="text-xs text-slate-600 font-medium">Iniciando cliente de WhatsApp...</p>
-          <p class="text-[10px] text-slate-400">Espera unos segundos para generar el código</p>
+          <p class="text-[10px] text-slate-400">Espera unos segundos para generar el código QR</p>
         </div>
         <img id="qr-image" class="hidden w-60 h-60 rounded-xl shadow" src="" alt="WhatsApp QR Code">
+        <div id="qr-error-card" class="hidden flex-col items-center gap-2 text-rose-600 text-center p-2">
+          <div class="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center text-lg font-bold">⚠️</div>
+          <p class="font-bold text-xs text-rose-800">No se pudo cargar el código QR</p>
+          <p id="qr-error-msg" class="text-[11px] text-slate-500">Error de conexión con WhatsApp Web.</p>
+        </div>
         <div id="qr-connected-card" class="hidden flex-col items-center gap-2 text-emerald-600">
           <div class="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center text-2xl font-bold">✓</div>
           <p class="font-bold text-sm text-slate-800">¡WhatsApp Conectado con Éxito!</p>
