@@ -154,6 +154,32 @@ class WhatsAppManager {
     this.emitState();
   }
 
+  async exportWhatsAppContacts() {
+    if (!this.isReady()) {
+      throw new Error('Debes conectar WhatsApp primero para poder extraer tus contactos.');
+    }
+
+    console.log('[WhatsApp] Extrayendo lista de contactos desde WhatsApp Web...');
+    const rawContacts = await this.client.getContacts();
+
+    // Filtrar contactos válidos (personas reales, excluir grupos y cuentas de sistema)
+    const validContacts = rawContacts
+      .filter((c) => c.isUser && !c.isGroup && c.number && c.number.length >= 8)
+      .map((c) => {
+        const displayName = c.name || c.pushname || `Contacto (${c.number})`;
+        return {
+          Nombre: displayName,
+          Telefono: `+${c.number}`,
+          Alumno: displayName, // Valor inicial sugerido
+          Materia: 'Matemáticas y Lenguaje',
+          GuardadoEnAgenda: c.isMyContact ? 'Sí' : 'No'
+        };
+      });
+
+    console.log(`[WhatsApp] Se extrajeron ${validContacts.length} contactos válidos de personas.`);
+    return validContacts;
+  }
+
   isReady() {
     return this.status === 'READY' && this.client !== null;
   }

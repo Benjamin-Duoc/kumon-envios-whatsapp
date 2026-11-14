@@ -119,6 +119,41 @@ app.post('/api/whatsapp/disconnect', async (req, res) => {
   }
 });
 
+// 6.1 Extraer contactos directamente a la tabla web
+app.get('/api/whatsapp/extract-contacts', async (req, res) => {
+  try {
+    const rawList = await whatsapp.exportWhatsAppContacts();
+    // Guardar temporalmente como excel para que el parser lo procese con toda la lógica de validación
+    const tempFile = path.join(UPLOADS_DIR, `whatsapp_contactos_${Date.now()}.xlsx`);
+    const ws = xlsx.utils.json_to_sheet(rawList);
+    const wb = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(wb, ws, 'Contactos');
+    xlsx.writeFile(wb, tempFile);
+
+    const parsedData = parseContactsFile(tempFile);
+    res.json({ success: true, data: parsedData, count: parsedData.total });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 6.2 Descargar contactos de WhatsApp como archivo Excel (.xlsx)
+app.get('/api/whatsapp/download-excel', async (req, res) => {
+  try {
+    const rawList = await whatsapp.exportWhatsAppContacts();
+    const ws = xlsx.utils.json_to_sheet(rawList);
+    const wb = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(wb, ws, 'Contactos');
+    const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="contactos_whatsapp_extraidos.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (err) {
+    res.status(400).send(`Error: ${err.message}`);
+  }
+});
+
 // 7. Controles del motor de envío
 app.post('/api/sender/start', async (req, res) => {
   try {

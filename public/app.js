@@ -51,6 +51,16 @@ const el = {
   btnModalDisconnect: document.getElementById('btn-modal-disconnect'),
 
   btnLoadTestData: document.getElementById('btn-load-test-data'),
+  btnAddManualContact: document.getElementById('btn-add-manual-contact'),
+  btnImportWaContacts: document.getElementById('btn-import-wa-contacts'),
+  manualContactModal: document.getElementById('manual-contact-modal'),
+  btnCloseManualModal: document.getElementById('btn-close-manual-modal'),
+  btnCancelManualContact: document.getElementById('btn-cancel-manual-contact'),
+  btnSaveManualContact: document.getElementById('btn-save-manual-contact'),
+  manualName: document.getElementById('manual-name'),
+  manualPhone: document.getElementById('manual-phone'),
+  manualAlumno: document.getElementById('manual-alumno'),
+  manualMateria: document.getElementById('manual-materia'),
   dropZone: document.getElementById('drop-zone'),
   contactsFileInput: document.getElementById('contacts-file-input'),
   contactsSummaryBox: document.getElementById('contacts-summary-box'),
@@ -147,6 +157,23 @@ function setupEventListeners() {
 
   // Carga de Contactos
   el.btnLoadTestData.addEventListener('click', loadTestData);
+
+  // Modal Contacto Manual
+  el.btnAddManualContact.addEventListener('click', () => {
+    el.manualName.value = '';
+    el.manualPhone.value = '';
+    el.manualAlumno.value = '';
+    el.manualContactModal.classList.remove('hidden');
+    el.manualName.focus();
+  });
+
+  el.btnCloseManualModal.addEventListener('click', () => el.manualContactModal.classList.add('hidden'));
+  el.btnCancelManualContact.addEventListener('click', () => el.manualContactModal.classList.add('hidden'));
+
+  el.btnSaveManualContact.addEventListener('click', handleSaveManualContact);
+
+  // Extraer Contactos de WhatsApp
+  el.btnImportWaContacts.addEventListener('click', handleImportFromWhatsApp);
 
   el.dropZone.addEventListener('click', () => el.contactsFileInput.click());
   el.contactsFileInput.addEventListener('change', (e) => {
@@ -289,6 +316,83 @@ async function uploadMediaFile(file) {
     }
   } catch (err) {
     alert(`Error al subir imagen: ${err.message}`);
+  }
+}
+
+function handleSaveManualContact() {
+  const name = el.manualName.value.trim();
+  const phone = el.manualPhone.value.trim();
+  const alumno = el.manualAlumno.value.trim() || name;
+  const materia = el.manualMateria.value.trim() || 'Matemáticas y Lenguaje';
+
+  if (!name || !phone) {
+    alert('Por favor ingresa al menos el Nombre y el Teléfono.');
+    return;
+  }
+
+  // Normalización básica rápida para Chile
+  let clean = phone.replace(/[^\d+]/g, '');
+  if (clean.startsWith('+')) clean = clean.substring(1);
+  if (clean.length === 9 && clean.startsWith('9')) clean = '56' + clean;
+  else if (clean.length === 8) clean = '569' + clean;
+
+  const isValid = clean.length >= 10 && clean.length <= 15;
+  const newContact = {
+    id: state.contacts.length + 1,
+    name,
+    rawPhone: phone,
+    phone: clean,
+    jid: `${clean}@c.us`,
+    displayPhone: `+${clean}`,
+    isValidPhone: isValid,
+    invalidReason: isValid ? null : 'Número inválido',
+    variables: {
+      nombre: name,
+      telefono: `+${clean}`,
+      alumno,
+      materia
+    },
+    status: 'pending'
+  };
+
+  state.contacts.push(newContact);
+  ['nombre', 'telefono', 'alumno', 'materia'].forEach(t => {
+    if (!state.availableTags.includes(t)) state.availableTags.push(t);
+  });
+
+  applyLoadedContacts({
+    contacts: state.contacts,
+    total: state.contacts.length,
+    validCount: state.contacts.filter(c => c.isValidPhone).length,
+    invalidCount: state.contacts.filter(c => !c.isValidPhone).length,
+    availableTags: state.availableTags
+  }, 'Contacto agregado manualmente');
+
+  el.manualContactModal.classList.add('hidden');
+  addLog(`➕ Contacto agregado: ${name} (+${clean})`, 'success');
+}
+
+async function handleImportFromWhatsApp() {
+  if (state.whatsappStatus !== 'READY') {
+    alert('Debes conectar WhatsApp primero mediante el botón "Vincular WhatsApp" para poder extraer tus contactos.');
+    el.btnOpenQrModal.click();
+    return;
+  }
+
+  try {
+    addLog('📥 Extrayendo contactos desde tu WhatsApp Web conectado...', 'info');
+    const res = await fetch('/api/whatsapp/extract-contacts');
+    const json = await res.json();
+    if (json.success && json.data) {
+      applyLoadedContacts(json.data, `WhatsApp (${json.count} contactos extraídos)`);
+      addLog(`✅ ¡Éxito! Se extrajeron ${json.count} contactos directamente de tu WhatsApp.`, 'success');
+      alert(`¡Se extrajeron ${json.count} contactos de tu WhatsApp y ya están listos en la tabla!`);
+    } else {
+      alert(`Error al extraer contactos: ${json.error}`);
+      addLog(`Error: ${json.error}`, 'error');
+    }
+  } catch (err) {
+    alert(`Error de red: ${err.message}`);
   }
 }
 
