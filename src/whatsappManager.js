@@ -162,19 +162,29 @@ class WhatsAppManager {
     console.log(`[WhatsApp] Extrayendo lista de contactos (Límite: ${limit || 'Todos'}, Solo guardados: ${savedOnly})...`);
     const rawContacts = await this.client.getContacts();
 
-    // Filtrar contactos válidos (personas reales, excluir grupos y cuentas de sistema)
+    // Filtrar contactos válidos (personas reales, excluir grupos, LIDs y cuentas de sistema)
     const validContacts = [];
+    const seenPhones = new Set();
+
     for (const c of rawContacts) {
       if (c.isGroup) continue;
       if (savedOnly && !c.isMyContact) continue;
 
-      const rawPhone = c.number || (c.id && c.id.user) || '';
-      if (!rawPhone || String(rawPhone).length < 8) continue;
-      
+      // Descartar identificadores internos LID (Linked Identity), canales y estados
+      if (c.id && c.id.server && c.id.server !== 'c.us') continue;
+
       const serialized = c.id && c.id._serialized ? c.id._serialized : '';
-      if (serialized.includes('status') || serialized.includes('broadcast') || serialized.includes('newsletter')) {
+      if (serialized.includes('@lid') || serialized.includes('status') || serialized.includes('broadcast') || serialized.includes('newsletter')) {
         continue;
       }
+
+      // Limpiar solo dígitos y validar longitud internacional real (8 a 14 dígitos)
+      const rawPhone = String(c.number || (c.id && c.id.user) || '').replace(/[^\d]/g, '');
+      if (!rawPhone || rawPhone.length < 8 || rawPhone.length > 14) continue;
+
+      // Evitar que el mismo número aparezca repetido
+      if (seenPhones.has(rawPhone)) continue;
+      seenPhones.add(rawPhone);
 
       const displayName = c.name || c.pushname || `Contacto (+${rawPhone})`;
       validContacts.push({
