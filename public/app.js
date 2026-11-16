@@ -198,9 +198,9 @@ function setupEventListeners() {
   el.extractPresetBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       el.extractPresetBtns.forEach((b) => {
-        b.className = 'extract-preset-btn py-1.5 px-2 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 rounded-lg font-bold border border-slate-200 text-center transition';
+        b.className = 'extract-preset-btn py-2 px-2 bg-slate-100 hover:bg-kumon-50 hover:text-kumon-700 text-slate-700 rounded-xl font-bold border border-slate-200 text-center transition';
       });
-      btn.className = 'extract-preset-btn py-1.5 px-2 bg-sky-600 text-white rounded-lg font-bold border border-sky-600 text-center transition';
+      btn.className = 'extract-preset-btn py-2 px-2 bg-kumon-500 text-white rounded-xl font-bold border border-kumon-500 text-center transition shadow-xs';
       const amount = btn.getAttribute('data-amount');
       el.extractCustomLimit.value = amount === 'all' ? '3000' : amount;
       el.extractCustomLimit.setAttribute('data-selected-amount', amount);
@@ -477,9 +477,9 @@ function applyLoadedContacts(data, filename) {
   el.tagsContainer.innerHTML = '';
   state.availableTags.forEach((tag) => {
     const btn = document.createElement('button');
-    btn.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-white hover:bg-sky-50 text-sky-700 border border-sky-300 transition shadow-xs';
+    btn.className = 'btn-bounce px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-kumon-50 text-kumon-800 border border-kumon-200 transition shadow-2xs cursor-pointer';
     btn.textContent = `{${tag}}`;
-    btn.title = `Haz clic para insertar {${tag}}`;
+    btn.title = `Haz clic para insertar {${tag}} en el mensaje`;
     btn.addEventListener('click', () => insertTag(tag));
     el.tagsContainer.appendChild(btn);
   });
@@ -546,43 +546,89 @@ function updatePhonePreview() {
 // ==========================================
 // TABLA DE CONTACTOS
 // ==========================================
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+const AVATAR_COLORS = [
+  'bg-kumon-100 text-kumon-800 ring-kumon-200',
+  'bg-emerald-100 text-emerald-800 ring-emerald-200',
+  'bg-amber-100 text-amber-800 ring-amber-200',
+  'bg-purple-100 text-purple-800 ring-purple-200',
+  'bg-rose-100 text-rose-800 ring-rose-200',
+  'bg-teal-100 text-teal-800 ring-teal-200',
+  'bg-indigo-100 text-indigo-800 ring-indigo-200'
+];
+
 function renderContactsTable() {
   el.contactsTableBody.innerHTML = '';
   el.tableCount.textContent = `${state.contacts.length} contactos`;
 
   if (state.contacts.length === 0) {
-    el.contactsTableBody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">No hay contactos cargados.</td></tr>`;
+    el.contactsTableBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="py-8 text-center text-slate-400">
+          <div class="flex flex-col items-center justify-center gap-2">
+            <span class="text-3xl">👥</span>
+            <p class="font-semibold text-slate-600">No hay contactos cargados en la lista</p>
+            <p class="text-xs text-slate-400">Haz clic en "⚡ Probar Ejemplo" o "📥 Extraer de WhatsApp" arriba.</p>
+          </div>
+        </td>
+      </tr>
+    `;
     return;
   }
 
   state.contacts.forEach((c, idx) => {
     const tr = document.createElement('tr');
     tr.id = `contact-row-${c.id}`;
-    tr.className = 'hover:bg-slate-50 transition cursor-pointer';
+    tr.className = 'hover:bg-slate-50/80 transition cursor-pointer group';
 
     // Status chip
-    let statusChip = '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600">Pendiente</span>';
+    let statusChip = '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">⏳ Pendiente</span>';
     if (c.status === 'sent') {
-      statusChip = '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">✓ Enviado</span>';
+      statusChip = '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">✓ Enviado</span>';
     } else if (c.status === 'failed') {
-      statusChip = '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-700">✗ Fallido</span>';
+      statusChip = '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800" title="' + (c.error || '') + '">✗ Fallido</span>';
     } else if (c.status === 'skipped') {
-      statusChip = '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700">⚠ Omitido</span>';
+      statusChip = '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800" title="' + (c.error || '') + '">⚠ Omitido</span>';
     }
 
+    const initials = getInitials(c.name);
+    const colorClass = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+
     tr.innerHTML = `
-      <td class="py-2.5 px-3 font-mono text-slate-400">${idx + 1}</td>
-      <td class="py-2.5 px-3 font-semibold text-slate-800">${c.name}</td>
-      <td class="py-2.5 px-3 font-mono text-slate-600 ${c.isValidPhone ? '' : 'text-rose-600 font-bold'}">${c.displayPhone}</td>
-      <td class="py-2.5 px-3 text-slate-700">${c.variables.alumno || '-'}</td>
-      <td class="py-2.5 px-3 text-slate-700">${c.variables.materia || '-'}</td>
-      <td class="py-2.5 px-3" id="chip-status-${c.id}">${statusChip}</td>
-      <td class="py-2.5 px-3 text-right">
+      <td class="py-3 px-3.5 font-mono text-slate-400 text-xs">${idx + 1}</td>
+      <td class="py-3 px-3.5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold ring-1 ${colorClass} shrink-0">
+            ${initials}
+          </div>
+          <div>
+            <p class="font-bold text-slate-900 leading-tight">${c.name}</p>
+          </div>
+        </div>
+      </td>
+      <td class="py-3 px-3.5 font-mono text-xs ${c.isValidPhone ? 'text-slate-600' : 'text-rose-600 font-bold'}">
+        ${c.displayPhone}
+      </td>
+      <td class="py-3 px-3.5 text-slate-700 font-medium">
+        ${c.variables.alumno || '<span class="text-slate-400 italic">No especificado</span>'}
+      </td>
+      <td class="py-3 px-3.5">
+        <span class="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+          ${c.variables.materia || 'Kumon'}
+        </span>
+      </td>
+      <td class="py-3 px-3.5 text-center" id="chip-status-${c.id}">${statusChip}</td>
+      <td class="py-3 px-3.5 text-right">
         <div class="flex items-center justify-end gap-1.5">
-          <button class="text-[10px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 px-2 py-0.5 rounded transition" onclick="selectPreviewContact(${idx})">Ver Preview</button>
-          <button class="text-[10px] font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded transition flex items-center gap-0.5" title="Eliminar de la lista de envío" onclick="deleteContact(${c.id})">
+          <button class="btn-bounce text-[11px] font-bold text-kumon-700 hover:text-kumon-900 bg-kumon-50 hover:bg-kumon-100 border border-kumon-200 px-2.5 py-1 rounded-lg transition" onclick="selectPreviewContact(${idx})">👁️ Ver Preview</button>
+          <button class="btn-bounce text-[11px] font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-1 rounded-lg transition flex items-center gap-1" title="Eliminar de la lista de envío" onclick="deleteContact(${c.id})">
             <span>🗑️</span>
-            <span>Eliminar</span>
           </button>
         </div>
       </td>
@@ -640,17 +686,19 @@ window.selectPreviewContact = function(index) {
 function setMode(newMode) {
   state.mode = newMode;
   if (newMode === 'simulation') {
-    el.modeBtnSimulation.className = 'py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white text-sky-700 shadow-sm';
-    el.modeBtnLive.className = 'py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900';
-    el.modeNotice.className = 'p-3 bg-sky-50 border border-sky-200 rounded-xl text-xs text-sky-900';
-    el.modeNotice.innerHTML = '💡 <b>Modo Simulación Activo:</b> Permite probar la plantilla, el reemplazo de nombres y el flujo completo sin enviar ningún mensaje real ni molestar a los apoderados.';
-    el.startBtnLabel.textContent = 'Iniciar Simulación de Envío';
+    el.modeBtnSimulation.className = 'py-3 px-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-white text-kumon-700 shadow-sm border border-slate-200/60';
+    el.modeBtnLive.className = 'py-3 px-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900';
+    el.modeNotice.className = 'p-3.5 bg-kumon-50 border border-kumon-200 rounded-2xl text-xs text-kumon-900 flex items-start gap-2.5';
+    el.modeNotice.innerHTML = '<span class="text-lg leading-none">💡</span><div><p class="font-bold">Modo Práctica Activo (100% Seguro):</p><p class="mt-0.5 text-kumon-800">Puedes probar el mensaje, ver cómo se reemplazan los nombres de los alumnos y comprobar todo el proceso sin enviar nada a los teléfonos reales.</p></div>';
+    el.btnStart.className = 'btn-bounce flex-1 py-3.5 px-4 rounded-2xl font-extrabold text-sm sm:text-base bg-kumon-500 hover:bg-kumon-600 active:bg-kumon-700 text-white shadow-lg shadow-kumon-200 transition-all flex items-center justify-center gap-2.5';
+    el.startBtnLabel.textContent = 'Iniciar Simulación de Prueba';
   } else {
-    el.modeBtnLive.className = 'py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-sm';
-    el.modeBtnSimulation.className = 'py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900';
-    el.modeNotice.className = 'p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900';
-    el.modeNotice.innerHTML = '⚠️ <b>Modo Real (WhatsApp Web):</b> Los mensajes e imágenes se despacharán al WhatsApp de los apoderados reales desde la cuenta de Ximena con pausas de seguridad.';
-    el.startBtnLabel.textContent = '🚀 Iniciar Envío Real (WhatsApp)';
+    el.modeBtnLive.className = 'py-3 px-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-sm';
+    el.modeBtnSimulation.className = 'py-3 px-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900';
+    el.modeNotice.className = 'p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-start gap-2.5';
+    el.modeNotice.innerHTML = '<span class="text-lg leading-none">⚠️</span><div><p class="font-bold">Modo Real Oficial (WhatsApp):</p><p class="mt-0.5 text-amber-800">Los mensajes e imágenes se enviarán directamente al WhatsApp de cada apoderado desde tu cuenta con intervalos de seguridad.</p></div>';
+    el.btnStart.className = 'btn-bounce flex-1 py-3.5 px-4 rounded-2xl font-extrabold text-sm sm:text-base bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2.5';
+    el.startBtnLabel.textContent = '🚀 Iniciar Envío a Familias (WhatsApp)';
   }
 }
 
@@ -734,21 +782,21 @@ socket.on('whatsapp_status', (data) => {
   state.whatsappStatus = data.status;
 
   if (data.status === 'READY') {
-    el.waBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200';
+    el.waBadge.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs';
     el.waBadge.querySelector('span').className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
-    el.waStatusText.textContent = `Conectado: ${data.userProfile?.pushname || 'Ximena Kumon'}`;
+    el.waStatusText.textContent = `🟢 WhatsApp Conectado (${data.userProfile?.pushname || 'Ximena'})`;
 
     // Modal
     el.qrLoading.classList.add('hidden');
     el.qrImage.classList.add('hidden');
     el.qrErrorCard.classList.add('hidden');
     el.qrConnectedCard.classList.remove('hidden');
-    el.qrUserName.textContent = `Sesión activa como: ${data.userProfile?.pushname || 'Ximena'}`;
+    el.qrUserName.textContent = `Sesión activa como: ${data.userProfile?.pushname || 'Orientadora Ximena'}`;
     el.btnModalDisconnect.classList.remove('hidden');
   } else if (data.status === 'QR_READY' && data.qrCode) {
-    el.waBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200';
+    el.waBadge.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs';
     el.waBadge.querySelector('span').className = 'w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse';
-    el.waStatusText.textContent = 'Esperando escaneo de QR...';
+    el.waStatusText.textContent = '🟡 Escanear Código QR';
 
     // Modal
     el.qrLoading.classList.add('hidden');
@@ -758,6 +806,8 @@ socket.on('whatsapp_status', (data) => {
     el.qrImage.classList.remove('hidden');
     el.btnModalDisconnect.classList.add('hidden');
   } else if (data.status === 'INITIALIZING') {
+    el.waBadge.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-200 shadow-2xs';
+    el.waBadge.querySelector('span').className = 'w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping';
     el.waStatusText.textContent = 'Iniciando WhatsApp...';
     el.qrLoading.classList.remove('hidden');
     el.qrImage.classList.add('hidden');
@@ -765,9 +815,9 @@ socket.on('whatsapp_status', (data) => {
     el.qrConnectedCard.classList.add('hidden');
   } else {
     // DISCONNECTED
-    el.waBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200';
+    el.waBadge.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 shadow-2xs';
     el.waBadge.querySelector('span').className = 'w-2.5 h-2.5 rounded-full bg-slate-400';
-    el.waStatusText.textContent = 'WhatsApp Desconectado';
+    el.waStatusText.textContent = '⚪ WhatsApp Desconectado';
     el.btnModalDisconnect.classList.add('hidden');
 
     if (data.error) {
