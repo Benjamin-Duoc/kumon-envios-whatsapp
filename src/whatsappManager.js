@@ -154,18 +154,20 @@ class WhatsAppManager {
     this.emitState();
   }
 
-  async exportWhatsAppContacts() {
+  async exportWhatsAppContacts(limit = null, savedOnly = false) {
     if (!this.isReady()) {
       throw new Error('Debes conectar WhatsApp primero para poder extraer tus contactos.');
     }
 
-    console.log('[WhatsApp] Extrayendo lista de contactos desde WhatsApp Web...');
+    console.log(`[WhatsApp] Extrayendo lista de contactos (Límite: ${limit || 'Todos'}, Solo guardados: ${savedOnly})...`);
     const rawContacts = await this.client.getContacts();
 
     // Filtrar contactos válidos (personas reales, excluir grupos y cuentas de sistema)
     const validContacts = [];
     for (const c of rawContacts) {
       if (c.isGroup) continue;
+      if (savedOnly && !c.isMyContact) continue;
+
       const rawPhone = c.number || (c.id && c.id.user) || '';
       if (!rawPhone || String(rawPhone).length < 8) continue;
       
@@ -182,9 +184,13 @@ class WhatsAppManager {
         Materia: 'Matemáticas y Lenguaje',
         GuardadoEnAgenda: c.isMyContact ? 'Sí' : 'No'
       });
+
+      if (limit && limit > 0 && validContacts.length >= limit) {
+        break;
+      }
     }
 
-    console.log(`[WhatsApp] Se extrajeron ${validContacts.length} contactos válidos de personas.`);
+    console.log(`[WhatsApp] Se extrajeron ${validContacts.length} contactos válidos.`);
     return validContacts;
   }
 

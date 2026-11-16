@@ -120,10 +120,13 @@ app.post('/api/whatsapp/disconnect', async (req, res) => {
   }
 });
 
-// 6.1 Extraer contactos directamente a la tabla web
+// 6.1 Extraer contactos directamente a la tabla web con límite opcional
 app.get('/api/whatsapp/extract-contacts', async (req, res) => {
   try {
-    const rawList = await whatsapp.exportWhatsAppContacts();
+    const limit = req.query.limit && req.query.limit !== 'all' ? parseInt(req.query.limit, 10) : null;
+    const savedOnly = req.query.savedOnly === 'true';
+
+    const rawList = await whatsapp.exportWhatsAppContacts(limit, savedOnly);
     // Guardar temporalmente como excel para que el parser lo procese con toda la lógica de validación
     const tempFile = path.join(UPLOADS_DIR, `whatsapp_contactos_${Date.now()}.xlsx`);
     const ws = xlsx.utils.json_to_sheet(rawList);
@@ -138,10 +141,13 @@ app.get('/api/whatsapp/extract-contacts', async (req, res) => {
   }
 });
 
-// 6.2 Descargar contactos de WhatsApp como archivo Excel (.xlsx)
+// 6.2 Descargar contactos de WhatsApp como archivo Excel (.xlsx) con límite opcional
 app.get('/api/whatsapp/download-excel', async (req, res) => {
   try {
-    const rawList = await whatsapp.exportWhatsAppContacts();
+    const limit = req.query.limit && req.query.limit !== 'all' ? parseInt(req.query.limit, 10) : null;
+    const savedOnly = req.query.savedOnly === 'true';
+
+    const rawList = await whatsapp.exportWhatsAppContacts(limit, savedOnly);
     const ws = xlsx.utils.json_to_sheet(rawList);
     const wb = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(wb, ws, 'Contactos');

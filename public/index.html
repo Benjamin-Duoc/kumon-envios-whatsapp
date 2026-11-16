@@ -425,6 +425,59 @@
     </div>
   </div>
 
+  <!-- MODAL PARA EXTRAER CONTACTOS CON LÍMITE SELECCIONABLE -->
+  <div id="extract-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-left space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📥</span>
+          <h3 class="font-bold text-slate-900 text-base">Extraer Contactos de WhatsApp</h3>
+        </div>
+        <button id="btn-close-extract-modal" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1.5">¿Cuántos contactos deseas extraer?</label>
+          <div class="grid grid-cols-5 gap-1.5 mb-2">
+            <button type="button" class="extract-preset-btn py-1.5 px-2 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 rounded-lg font-bold border border-slate-200 text-center transition" data-amount="25">25</button>
+            <button type="button" class="extract-preset-btn py-1.5 px-2 bg-sky-600 text-white rounded-lg font-bold border border-sky-600 text-center transition" data-amount="50">50</button>
+            <button type="button" class="extract-preset-btn py-1.5 px-2 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 rounded-lg font-bold border border-slate-200 text-center transition" data-amount="100">100</button>
+            <button type="button" class="extract-preset-btn py-1.5 px-2 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 rounded-lg font-bold border border-slate-200 text-center transition" data-amount="250">250</button>
+            <button type="button" class="extract-preset-btn py-1.5 px-2 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 rounded-lg font-bold border border-slate-200 text-center transition" data-amount="all">Todos</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500 font-medium">O escribe una cantidad:</span>
+            <input type="number" id="extract-custom-limit" min="1" max="5000" value="50" class="w-24 p-2 border border-slate-300 rounded-lg font-bold text-center outline-none focus:ring-2 focus:ring-sky-500">
+            <span class="text-slate-400">contactos</span>
+          </div>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+          <label class="flex items-center gap-2 cursor-pointer font-medium text-slate-700 select-none">
+            <input type="checkbox" id="extract-saved-only" class="w-4 h-4 text-sky-600 rounded">
+            <span>Extraer solo contactos guardados en mi agenda (con nombre)</span>
+          </label>
+          <p class="text-[10px] text-slate-400 pl-6">Si lo desmarcas, también extraerá chats y números no guardados.</p>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2 pt-2 border-t border-slate-100">
+        <div class="flex gap-2">
+          <button id="btn-do-extract-table" class="flex-1 py-2.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow transition flex items-center justify-center gap-1.5">
+            <span>📋 Cargar en la Tabla</span>
+          </button>
+          <button id="btn-do-extract-excel" class="flex-1 py-2.5 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-xl shadow transition flex items-center justify-center gap-1.5">
+            <span>📥 Descargar Excel</span>
+          </button>
+        </div>
+        <button id="btn-cancel-extract" class="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 transition text-center">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="/app.js"></script>
 </body>
 </html>

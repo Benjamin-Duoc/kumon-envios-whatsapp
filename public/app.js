@@ -53,6 +53,14 @@ const el = {
   btnLoadTestData: document.getElementById('btn-load-test-data'),
   btnAddManualContact: document.getElementById('btn-add-manual-contact'),
   btnImportWaContacts: document.getElementById('btn-import-wa-contacts'),
+  extractModal: document.getElementById('extract-modal'),
+  btnCloseExtractModal: document.getElementById('btn-close-extract-modal'),
+  btnCancelExtract: document.getElementById('btn-cancel-extract'),
+  extractCustomLimit: document.getElementById('extract-custom-limit'),
+  extractSavedOnly: document.getElementById('extract-saved-only'),
+  btnDoExtractTable: document.getElementById('btn-do-extract-table'),
+  btnDoExtractExcel: document.getElementById('btn-do-extract-excel'),
+  extractPresetBtns: document.querySelectorAll('.extract-preset-btn'),
   manualContactModal: document.getElementById('manual-contact-modal'),
   btnCloseManualModal: document.getElementById('btn-close-manual-modal'),
   btnCancelManualContact: document.getElementById('btn-cancel-manual-contact'),
@@ -173,8 +181,34 @@ function setupEventListeners() {
 
   el.btnSaveManualContact.addEventListener('click', handleSaveManualContact);
 
-  // Extraer Contactos de WhatsApp
-  el.btnImportWaContacts.addEventListener('click', handleImportFromWhatsApp);
+  // Extraer Contactos de WhatsApp (Modal con selector de cantidad)
+  el.btnImportWaContacts.addEventListener('click', () => {
+    if (state.whatsappStatus !== 'READY') {
+      alert('Debes conectar WhatsApp primero mediante el botón "Vincular WhatsApp" para poder extraer tus contactos.');
+      el.btnOpenQrModal.click();
+      return;
+    }
+    el.extractModal.classList.remove('hidden');
+  });
+
+  el.btnCloseExtractModal.addEventListener('click', () => el.extractModal.classList.add('hidden'));
+  el.btnCancelExtract.addEventListener('click', () => el.extractModal.classList.add('hidden'));
+
+  // Botones de cantidad predeterminada (25, 50, 100, 250, Todos)
+  el.extractPresetBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      el.extractPresetBtns.forEach((b) => {
+        b.className = 'extract-preset-btn py-1.5 px-2 bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 rounded-lg font-bold border border-slate-200 text-center transition';
+      });
+      btn.className = 'extract-preset-btn py-1.5 px-2 bg-sky-600 text-white rounded-lg font-bold border border-sky-600 text-center transition';
+      const amount = btn.getAttribute('data-amount');
+      el.extractCustomLimit.value = amount === 'all' ? '3000' : amount;
+      el.extractCustomLimit.setAttribute('data-selected-amount', amount);
+    });
+  });
+
+  el.btnDoExtractTable.addEventListener('click', () => doExtractContacts('table'));
+  el.btnDoExtractExcel.addEventListener('click', () => doExtractContacts('excel'));
 
   el.dropZone.addEventListener('click', () => el.contactsFileInput.click());
   el.contactsFileInput.addEventListener('change', (e) => {
@@ -388,16 +422,26 @@ function handleSaveManualContact() {
   addLog(`➕ Contacto agregado: ${name} (+${clean})`, 'success');
 }
 
-async function handleImportFromWhatsApp() {
-  if (state.whatsappStatus !== 'READY') {
-    alert('Debes conectar WhatsApp primero mediante el botón "Vincular WhatsApp" para poder extraer tus contactos.');
-    el.btnOpenQrModal.click();
+async function doExtractContacts(destination = 'table') {
+  const selectedBtn = document.querySelector('.extract-preset-btn.bg-sky-600');
+  let amount = selectedBtn ? selectedBtn.getAttribute('data-amount') : '50';
+  if (el.extractCustomLimit.value && amount !== 'all') {
+    amount = el.extractCustomLimit.value;
+  }
+  const savedOnly = el.extractSavedOnly.checked;
+  const query = `limit=${encodeURIComponent(amount)}&savedOnly=${savedOnly}`;
+
+  el.extractModal.classList.add('hidden');
+
+  if (destination === 'excel') {
+    addLog(`📥 Descargando archivo Excel con contactos de WhatsApp (${amount === 'all' ? 'Todos' : amount} contactos)...`, 'info');
+    window.location.href = `/api/whatsapp/download-excel?${query}`;
     return;
   }
 
   try {
-    addLog('📥 Extrayendo contactos desde tu WhatsApp Web conectado...', 'info');
-    const res = await fetch('/api/whatsapp/extract-contacts');
+    addLog(`📥 Extrayendo ${amount === 'all' ? 'todos los' : amount} contactos de WhatsApp Web...`, 'info');
+    const res = await fetch(`/api/whatsapp/extract-contacts?${query}`);
     const json = await res.json();
     if (json.success && json.data) {
       applyLoadedContacts(json.data, `WhatsApp (${json.count} contactos extraídos)`);
