@@ -163,18 +163,26 @@ class WhatsAppManager {
     const rawContacts = await this.client.getContacts();
 
     // Filtrar contactos válidos (personas reales, excluir grupos y cuentas de sistema)
-    const validContacts = rawContacts
-      .filter((c) => c.isUser && !c.isGroup && c.number && c.number.length >= 8)
-      .map((c) => {
-        const displayName = c.name || c.pushname || `Contacto (${c.number})`;
-        return {
-          Nombre: displayName,
-          Telefono: `+${c.number}`,
-          Alumno: displayName, // Valor inicial sugerido
-          Materia: 'Matemáticas y Lenguaje',
-          GuardadoEnAgenda: c.isMyContact ? 'Sí' : 'No'
-        };
+    const validContacts = [];
+    for (const c of rawContacts) {
+      if (c.isGroup) continue;
+      const rawPhone = c.number || (c.id && c.id.user) || '';
+      if (!rawPhone || String(rawPhone).length < 8) continue;
+      
+      const serialized = c.id && c.id._serialized ? c.id._serialized : '';
+      if (serialized.includes('status') || serialized.includes('broadcast') || serialized.includes('newsletter')) {
+        continue;
+      }
+
+      const displayName = c.name || c.pushname || `Contacto (+${rawPhone})`;
+      validContacts.push({
+        Nombre: displayName,
+        Telefono: `+${rawPhone}`,
+        Alumno: displayName, // Valor inicial sugerido
+        Materia: 'Matemáticas y Lenguaje',
+        GuardadoEnAgenda: c.isMyContact ? 'Sí' : 'No'
       });
+    }
 
     console.log(`[WhatsApp] Se extrajeron ${validContacts.length} contactos válidos de personas.`);
     return validContacts;

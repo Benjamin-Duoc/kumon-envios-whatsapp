@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const xlsx = require('xlsx');
 
 const WhatsAppManager = require('./whatsappManager');
 const SenderEngine = require('./senderEngine');
